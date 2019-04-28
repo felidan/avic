@@ -8,7 +8,8 @@ def HoughLinesPadrao(img, cor = (0,255,0), espes_linha = 1, limiares = 50):
     dst = cv.Canny(img, 50, 200, None, 3)
 
     img_saida = img
-    lines = cv.HoughLines(dst, 1, np.pi / 180, limiares, None, 0, 0)
+    #lines = cv.HoughLines(dst, 1, np.pi / 180, limiares, None, 0, 0)
+    lines = cv.HoughLines(dst, 1, np.pi/180, 30, 250)
 
     # Transformação de linha Hough padrão
     if lines is not None:
@@ -38,7 +39,7 @@ def HoughLinesProbabilistico(img, cor = (0,255,0), espes_linha = 1, limiares = 5
     lines = cv.HoughLines(dst, 1, np.pi / 180, limiares, None, 0, 0)
     if lines is not None:
         for i in range(0, len(lines)):
-            theta.append(math.degrees(lines[i][0][1]))
+            theta.append(math.degrees(lines[i][0][1]) + 90)
     
     linesP = cv.HoughLinesP(dst, 1, np.pi / 180, limiares, None, minLineGap, maxLineGap)
     
@@ -49,3 +50,40 @@ def HoughLinesProbabilistico(img, cor = (0,255,0), espes_linha = 1, limiares = 5
             cv.line(img_saida, (l[0], l[1]), (l[2], l[3]), cor, espes_linha, cv.LINE_AA)
 
     return [img_saida, theta]
+
+def HoughLinesProbabilistico2(img, cor = (0,255,0), espes_linha = 1, limiar=30, maxGap = 250, cannyMinVal=75, cannyMaxVal=150):
+    count = 0
+    # Tenta converter para escala de cinza
+    try:
+        img_saida = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    except:
+        img_saida = img
+
+    # Detecta as bordas da imagem
+    bordas = cv.Canny(img_saida, cannyMinVal, cannyMaxVal)
+    
+    lines = cv.HoughLinesP(bordas, 1, np.pi/180, limiar, maxLineGap=maxGap)
+
+    # Aplica pitagoras para descobrir o tamanho da diagonal da imagem
+    # [DIMEN]x[ANGULO]
+    t = int(np.sqrt(img.shape[0]**2 + img.shape[1]**2))
+    matrizBinaria = np.zeros((t,91), dtype=int)
+    matrizLinhas = np.zeros((len(lines), 2))
+
+    for line in lines:
+        x1, y1, x2, y2 = line[0]
+        # Identifica o centro da linha para encontrar o rho e theta
+        modX = np.abs(x1 - x2)/2
+        modY = np.abs(y1 - y2)/2
+        centroX = modX + min(x1, x2)
+        centroY = modY + min(y1, y2)
+        # Calcula Rho e Theta do centro da reta
+        rho = np.sqrt(centroX**2 + centroY**2)
+        theta = math.degrees(np.arctan2(centroY, centroX))
+        # Popula matriz binária e matriz de retas
+        matrizBinaria[int(round(rho))][int(round(theta))] += 1
+        matrizLinhas[count] = (rho, theta)
+        cv.line(img, (x1, y1), (x2, y2), cor, espes_linha)
+        count += 1
+
+    return [img, matrizLinhas, matrizBinaria]
