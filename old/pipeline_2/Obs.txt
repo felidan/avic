@@ -1,0 +1,12 @@
+teste com 2 graus de inclinação
+
+Normal:
+[142.00792231  36.26468305]
+[142.00792231  36.26468305]
+
+Rotacionando 2 graus:
+[142.00792231  36.26468305]
+[167.96577032  14.65675112]
+ABS([25.95784801 21.60793193])
+
+problema: se um encontrar mais retas que o outro não é possivel tirar o valor absoluto
